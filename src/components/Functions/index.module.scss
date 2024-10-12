@@ -1,0 +1,14 @@
+.function_area {
+  display: flex;
+  gap: 10px;
+
+  button {
+    width: 100%;
+    height: 6rem;
+    font-size: 1.5rem;
+    color: #fff;
+    background-color: #10375c;
+    border: none;
+    cursor: pointer;
+  }
+}
