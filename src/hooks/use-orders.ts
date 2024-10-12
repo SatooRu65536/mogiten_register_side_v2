@@ -1,26 +1,35 @@
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { Order } from '../types';
-import { itemGroup } from '../const/items';
+import { itemGroup, itemList } from '../const/items';
 
 export default function useOrder() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [id, setId] = useState(0);
 
   // 商品を+1する
-  const increament = useCallback((itemName: string) => {
+  const increament = (itemName: string) => {
     setOrders((orders_) => {
-      const orders = structuredClone(orders_);
-      const orderIndex = orders.findIndex((i) => i.name === itemName);
+      const clonedOrders = structuredClone(orders_);
+      const orderIndex = clonedOrders.findIndex((i) => i.name === itemName);
 
-      if (orderIndex === -1) orders.push({ name: itemName, price: 100, quantity: 1 });
-      else orders[orderIndex].quantity += 1;
+      if (orderIndex !== -1) {
+        clonedOrders[orderIndex].quantity += 1;
+        return clonedOrders;
+      }
 
-      return orders;
+      const price = itemList.find((i) => i.name === itemName)?.price;
+      if (price === undefined) {
+        alert('商品が見つかりません');
+        return clonedOrders;
+      }
+      clonedOrders.push({ name: itemName, price, quantity: 1 });
+
+      return clonedOrders;
     });
-  }, []);
+  };
 
   // 商品を-1する
-  const decrement = useCallback((itemName: string) => {
+  const decrement = (itemName: string) => {
     setOrders((orders_) => {
       const orders = structuredClone(orders_);
       const orderIndex = orders.findIndex((i) => i.name === itemName);
@@ -32,36 +41,59 @@ export default function useOrder() {
 
       return orders;
     });
-  }, []);
+  };
 
   // food 全て+1する
-  const increamentAllFood = useCallback(() => {
+  const increamentAllFood = () => {
     const foods = structuredClone(itemGroup.food);
-    for (const food of foods) increament(food.name);
-  }, []);
+    const clonedOrders = structuredClone(orders);
+
+    for (const food of foods) {
+      const orderIndex = clonedOrders.findIndex(({ name }) => name === food.name);
+      if (orderIndex === -1) clonedOrders.push({ name: food.name, price: food.price, quantity: 1 });
+      else clonedOrders[orderIndex].quantity += 1;
+    }
+    setOrders(clonedOrders);
+  };
 
   // food 全て-1する
-  const decrementAllFood = useCallback(() => {
+  const decrementAllFood = () => {
     const foods = structuredClone(itemGroup.food);
-    for (const food of foods) decrement(food.name);
-  }, []);
+    const clonedOrders = structuredClone(orders);
+
+    for (const order_ of structuredClone(clonedOrders)) {
+      const food = foods.find((f) => f.name === order_.name);
+      if (food === undefined) continue;
+
+      const orderIndex = clonedOrders.findIndex((i) => i.name === order_.name);
+      if (orderIndex === -1) continue;
+
+      if (clonedOrders[orderIndex].quantity === 1) clonedOrders.splice(orderIndex, 1);
+      else clonedOrders[orderIndex].quantity -= 1;
+    }
+
+    setOrders(clonedOrders);
+  };
 
   // クリップボードにコピー
-  const copy2clipboard = useCallback(() => {
+  const copy2clipboard = () => {
     const sortedOrders = orders.sort((a, b) => a.name.localeCompare(b.name));
     const orderText = sortedOrders.map((o) => `${o.name}: ${o.quantity}`).join('\n');
     const slackText = `[${id}]\n${orderText}`;
     setId((prev) => prev + 1);
     navigator.clipboard.writeText(slackText).catch(() => alert('コピーに失敗しました'));
-  }, [orders]);
+  };
 
   // 初期化
-  const init = useCallback(() => {
+  const init = () => {
     setOrders([]);
-  }, []);
+  };
+
+  const total = orders.reduce((acc, cur) => acc + cur.price * cur.quantity, 0);
 
   return {
     orders,
+    total,
     increament,
     decrement,
     functions: {

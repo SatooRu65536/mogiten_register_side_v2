@@ -5,13 +5,13 @@ import ItemList from './components/ItemList';
 import useOrder from './hooks/use-orders';
 
 export default function App() {
-  const { orders, increament, decrement, functions, controller } = useOrder();
+  const { orders, total, increament, decrement, functions, controller } = useOrder();
 
   return (
     <main className={styles.main}>
       <ItemList orders={orders} increament={increament} decrement={decrement} />
       <Functions functions={functions} />
-      <Controller controller={controller} />
+      <Controller total={total} controller={controller} />
     </main>
   );
 }
